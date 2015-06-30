@@ -1,0 +1,82 @@
+#!/bin/sh
+
+version() {
+  echo 1.0.0
+}
+
+# defaults
+fg=16
+bg=0
+
+help() {
+cat << EOF
+DESCRIPTION:
+
+  Customizes the color and formatting of input from stdin.
+
+USAGE:
+
+  echo 'Color me! | stylin -fg 97 -bg 40 -fm is
+
+OPTIONS:
+
+  --help, -h     help menu
+  --version, -v  print version
+  --uninstall    removes this script - may require sudo
+
+  -fg [color]    foreground color (0-256)
+  -bg [color]    background color (0-256)
+  -fm [bius]     formatting: bold, italic, underline, strikethrough
+EOF
+}
+
+uninstall() {
+  rm $0
+}
+
+# handle cli args
+params=$(getopt -a -o hv -l fg:,bg:,fm:,help,version,uninstall -n "$0" -- "$@")
+eval set -- "$params"
+while [ "$1" ]; do
+  case "$1" in
+    --help|-h)
+      help
+      exit 0;;
+    --version|-v)
+      version
+      exit 0;;
+    --uninstall)
+      uninstall
+      exit 0;;
+    --fg)
+      fg=$2
+      shift;;
+    --bg)
+      bg=$2
+      shift;;
+    --fm)
+      fm=$2
+      shift;;
+  esac
+  shift
+done
+
+# handle format args
+for char in $(echo "${fm}" | fold -w1); do
+  case "$char" in
+    b) opt=1;;
+    i) opt=3;;
+    u) opt=4;;
+    s) opt=9;;
+    *) continue;;
+  esac
+  format="${format};$opt"
+done
+
+style="48;5;${bg};38;5;${fg}${format}"
+open="\033[${style}m"
+close="\033[0m"
+
+while read input; do
+  echo ${open}${input}${close}
+done
